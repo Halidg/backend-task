@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(320)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  notes     Note[]
+
+  @@map("users")
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String   @db.VarChar(200)
+  content   String?  @db.Text
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Covers a user's notes feed and stable keyset pagination by createdAt + id.
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "notes_user_created_id_idx")
+  @@map("notes")
+}
